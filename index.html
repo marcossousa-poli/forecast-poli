@@ -303,7 +303,8 @@ const LOGO_LIGHT="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGlu
 const { createClient } = supabase;
 const sb = createClient(
   'https://cbdxscsgcprmhtbqjcyn.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNiZHhzY3NnY3BybWh0YnFqY3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDQ3NjUsImV4cCI6MjA5NTAyMDc2NX0.f0UAcaol7zh8HGoZ57aHSzkTUmyryHHDykkh2mTPsMQ'
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNiZHhzY3NnY3BybWh0YnFqY3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDQ3NjUsImV4cCI6MjA5NTAyMDc2NX0.f0UAcaol7zh8HGoZ57aHSzkTUmyryHHDykkh2mTPsMQ',
+  { auth: { persistSession: true, autoRefreshToken: true, detectSessionFromUrl: true, storageKey: 'poli-auth' } }
 );
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
@@ -318,6 +319,7 @@ let currentUser = null;
 let metaGoalId = null;
 let realtimeSub = null;
 let saveTimer = null;
+let initDone = false;
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
 let S = {
@@ -438,7 +440,8 @@ function setSaveStatus(s){S.saveStatus=s;render();if(s==='ok')setTimeout(()=>{S.
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 sb.auth.onAuthStateChange(async(event,session)=>{
-  if(event==='SIGNED_IN'&&session){
+  if(!initDone) return; // init() handles initial state
+  if(event==='SIGNED_IN'&&session&&!currentUser){
     if(window.location.hash)history.replaceState(null,document.title,window.location.pathname);
     currentUser=session.user;
     await migrateLocalStorage();
@@ -471,6 +474,8 @@ async function init(){
   }catch(e){
     console.error('init error:',e);
     renderLogin();
+  }finally{
+    initDone=true;
   }
 }
 
