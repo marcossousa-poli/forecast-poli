@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>:root{
   --bg:#07070F;--bg-card:#0D0D1A;--bg-surf:#131326;--bg-in:#0A0A18;
@@ -453,7 +453,9 @@ sb.auth.onAuthStateChange(async(event,session)=>{
 async function init(){
   renderLoading();
   try{
-    const{data:{session}}=await sb.auth.getSession();
+    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000));
+    const sessionReq=sb.auth.getSession();
+    const{data:{session}}=await Promise.race([sessionReq,timeout]);
     if(session){
       if(window.location.hash)history.replaceState(null,document.title,window.location.pathname);
       currentUser=session.user;
@@ -464,12 +466,15 @@ async function init(){
     }else{
       renderLogin();
     }
-  }catch(e){renderLogin();}
+  }catch(e){
+    console.error('init error:',e);
+    renderLogin();
+  }
 }
 
-function renderLoading(){
+function renderLoading(msg){
   const isDark=document.documentElement.getAttribute('data-theme')!=='light';
-  document.getElementById('root').innerHTML=`<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);gap:16px"><img src="${isDark?LOGO_DARK:LOGO_LIGHT}" style="height:32px;opacity:0.7"><div style="font-size:12px;color:var(--txt3)">Carregando...</div></div>`;
+  document.getElementById('root').innerHTML=`<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);gap:16px"><img src="${isDark?LOGO_DARK:LOGO_LIGHT}" style="height:32px;opacity:0.7"><div style="font-size:12px;color:var(--txt3)">${msg||'Carregando...'}</div></div>`;
 }
 
 init();
