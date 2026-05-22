@@ -5,11 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Forecast · Poli Digital</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="dns-prefetch" href="https://cbdxscsgcprmhtbqjcyn.supabase.co">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" media="print" onload="this.media='all'">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js" async></script>
 <style>:root{
   --bg:#07070F;--bg-card:#0D0D1A;--bg-surf:#131326;--bg-in:#0A0A18;
   --bd:rgba(255,255,255,0.06);--bd-a:rgba(30,90,255,0.4);
@@ -477,7 +479,12 @@ function renderLoading(msg){
   document.getElementById('root').innerHTML=`<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);gap:16px"><img src="${isDark?LOGO_DARK:LOGO_LIGHT}" style="height:32px;opacity:0.7"><div style="font-size:12px;color:var(--txt3)">${msg||'Carregando...'}</div></div>`;
 }
 
-init();
+function waitForSupabase(cb,attempts=0){
+  if(window.supabase&&window.supabase.createClient){cb();}
+  else if(attempts<50){setTimeout(()=>waitForSupabase(cb,attempts+1),100);}
+  else{renderLogin();}
+}
+waitForSupabase(init);
 
 function subscribeRealtime(){
   if(realtimeSub)sb.removeChannel(realtimeSub);
@@ -710,8 +717,20 @@ function reportsHTML(){
 }
 
 // ─── CHARTS ──────────────────────────────────────────────────────────────────
+let _chartJsReady=!!window.Chart;
+function loadChartJs(){
+  if(_chartJsReady)return Promise.resolve();
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+    s.onload=()=>{_chartJsReady=true;res();};
+    s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
 function destroyCharts(){Object.values(chartRefs).forEach(c=>{try{c.destroy();}catch(e){}});chartRefs={};}
-function initCharts(){
+async function initCharts(){
+  await loadChartJs();
   destroyCharts();
   const{start,end}=getPeriodRange(S.period,S.periodStart,S.periodEnd);
   const all=[...S.hugo.map(e=>({...e,squad:'Hugo'})),...S.calil.map(e=>({...e,squad:'Calil'}))];
