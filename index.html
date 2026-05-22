@@ -674,7 +674,8 @@ function closerTabHTML(){
 }
 function rankingHTML(){
   const{start,end}=getPeriodRange(S.rankPeriod,S.rankStart,S.rankEnd);
-  const pBtns=['today','week','month','year'].map(p=>{const l={today:'Hoje',week:'7 dias',month:'Este mês',year:'Este ano'}[p];return`<button class="per-btn ${S.rankPeriod===p?'active':''}" onclick="setRankPeriod('${p}')">${l}</button>`;}).join('');
+  const pBtns=['today','week','month','year','custom'].map(p=>{const l={today:'Hoje',week:'7 dias',month:'Este mês',year:'Este ano',custom:'Personalizado'}[p];return`<button class="per-btn ${S.rankPeriod===p?'active':''}" onclick="setRankPeriod('${p}')">${l}</button>`;}).join('');
+  const rankCustom=S.rankPeriod==='custom'?`<div class="custom-range" style="margin-top:8px"><label>De</label><input class="fi" style="width:130px;height:28px" type="date" value="${S.rankStart}" onchange="S.rankStart=this.value;render()"><label>até</label><input class="fi" style="width:130px;height:28px" type="date" value="${S.rankEnd}" onchange="S.rankEnd=this.value;render()"></div>`:'';
   const block=(id,label)=>{
     const stats=closerStats(id,start,end).sort((a,b)=>b.wonMRR-a.wonMRR||b.pipeCount-a.pipeCount);
     const top=stats.slice(0,3),rest=stats.slice(3),medals=['🥇','🥈','🥉'];
@@ -683,7 +684,7 @@ function rankingHTML(){
     const restRows=rest.map((s,i)=>`<div class="rank-row"><div class="rank-pos">${i+4}</div><div><div class="rank-name">${s.short}</div></div><div class="rank-pipe" style="text-align:right">${s.pipeCount}op.</div><div class="rank-mrr ${!s.wonMRR?'zero':''}">${s.wonMRR>0?fmt(s.wonMRR):'—'}</div></div>`).join('');
     return`<div class="rank-block squad-${id}"><div class="sq-head"><span class="sq-badge">${label}</span><span class="sq-name">Squad ${label}</span><span class="sq-total" style="margin-left:auto">${fmt(stats.reduce((a,s)=>a+s.wonMRR,0))}</span></div>${top.length===0?`<div class="rank-empty">Sem dados no período</div>`:`<div class="rank-podium">${podOrder.map(({s,pos})=>pSlot(s,pos)).join('')}</div><div class="rank-list">${restRows}</div>`}</div>`;
   };
-  return`<div class="ranking-wrap"><div class="rank-period-bar">${pBtns}</div><div class="ranking-grid">${block('hugo','Hugo')}${block('calil','Calil')}</div></div>`;
+  return`<div class="ranking-wrap"><div class="rank-period-bar">${pBtns}</div>${rankCustom}<div class="ranking-grid">${block('hugo','Hugo')}${block('calil','Calil')}</div></div>`;
 }
 function reportsHTML(){
   const{start,end}=getPeriodRange(S.period,S.periodStart,S.periodEnd);
